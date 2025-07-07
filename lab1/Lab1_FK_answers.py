@@ -30,9 +30,45 @@ def part1_calculate_T_pose(bvh_file_path):
     Tips:
         joint_name顺序应该和bvh一致
     """
-    joint_name = None
-    joint_parent = None
-    joint_offset = None
+
+    with open(bvh_file_path, 'r') as f:
+        file_content = f.read().splitlines()
+
+    joint_stack = []
+    joint_list = []
+    name = ""
+    index = -1
+    for line in file_content:
+        if line.strip().startswith("ROOT") or line.strip().startswith("JOINT") or line.strip().startswith("End Site"):
+            joint = {
+                "name": "",
+                "index": None,
+                "parent_index": index,
+                "offset": []
+            }
+            if line.strip().startswith("ROOT") or line.strip().startswith("JOINT"):
+                name = line.split()[1]
+                joint["name"] = name
+            else:
+                joint["name"] = name + '_end'
+        if line.strip().startswith("{"):
+            index += 1
+            joint["index"] = index
+            joint_stack.append(joint)
+        if line.strip().startswith("OFFSET"):
+            offset = line.split()[1:]
+            joint_stack[-1]["offset"] = [float(x) for x in offset]
+        if line.strip().startswith("}"):
+            joint_tmp = joint_stack.pop()
+            if len(joint_stack) > 0:
+                joint_tmp["parent_index"] = joint_stack[-1]["index"]
+            joint_list.append(joint_tmp)
+
+    sorted_joint_list = sorted(joint_list, key=lambda item: item["index"])
+    
+    joint_name = [j["name"] for j in sorted_joint_list]
+    joint_parent = [j["parent_index"] for j in sorted_joint_list]
+    joint_offset = np.array([j["offset"] for j in sorted_joint_list])
     return joint_name, joint_parent, joint_offset
 
 
@@ -48,6 +84,12 @@ def part2_forward_kinematics(joint_name, joint_parent, joint_offset, motion_data
         1. joint_orientations的四元数顺序为(x, y, z, w)
         2. from_euler时注意使用大写的XYZ
     """
+    
+    motion_frame_data = motion_data[frame_id]
+    
+    for i in range(len(joint_name)):
+        pass
+    
     joint_positions = None
     joint_orientations = None
     return joint_positions, joint_orientations
