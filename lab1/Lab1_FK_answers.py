@@ -86,12 +86,31 @@ def part2_forward_kinematics(joint_name, joint_parent, joint_offset, motion_data
     """
     
     motion_frame_data = motion_data[frame_id]
+
+    joint_num = len(joint_name)
+    joint_positions = []
+    joint_orientations = []
     
-    for i in range(len(joint_name)):
-        pass
+    joint_positions.append(motion_frame_data[0: 3])
+    joint_orientations.append(R.from_euler('XYZ', motion_frame_data[3: 6], degrees=True).as_quat())
     
-    joint_positions = None
-    joint_orientations = None
+    joint_count = 1
+    for i in range(1, joint_num):
+        parent = joint_parent[i]
+        rotate = None
+        if joint_name[i].endswith('_end'):
+            rotate = R.from_euler('XYZ', [0., 0., 0.], degrees=True)
+        else:
+            rotate = R.from_euler('XYZ', motion_frame_data[3 + joint_count * 3: 6 + joint_count * 3], degrees=True)
+            joint_count += 1
+
+        parent_orientation = R.from_quat(joint_orientations[parent])
+        joint_orientations.append((parent_orientation * rotate).as_quat())
+        joint_positions.append(joint_positions[parent] + np.dot(R.from_quat(joint_orientations[parent]).as_matrix(), joint_offset[i]))
+
+    joint_positions = np.array(joint_positions)
+    joint_orientations = np.array(joint_orientations)
+    
     return joint_positions, joint_orientations
 
 
